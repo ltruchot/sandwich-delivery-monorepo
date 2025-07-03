@@ -1,9 +1,0 @@
-{
-  "name": "@sandwich-delivery/tailwind-preset",
-  "version": "1.0.0",
-  "main": "tailwind.preset.js",
-  "files": ["tailwind.preset.js"],
-  "peerDependencies": {
-    "tailwindcss": "^3.4.0"
-  }
-}

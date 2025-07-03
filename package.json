@@ -9,10 +9,8 @@
     "build": "pnpm run build:frontend && pnpm run build:backend",
     "build:frontend": "pnpm --filter astro-frontend build",
     "build:backend": "cd apps/spring-boot-api && ./gradlew build",
+    "build:backend:ci": "cd apps/spring-boot-api && sh build.sh",
     "preview:frontend": "pnpm --filter astro-frontend preview"
-  },
-  "devDependencies": {
-    "@types/node": "^20.14.9"
   },
   "packageManager": "pnpm@9.15.0"
 }
