@@ -8,7 +8,8 @@
     "dev:backend": "cd apps/spring-boot-api && ./gradlew bootRun",
     "build": "pnpm run build:frontend && pnpm run build:backend",
     "build:frontend": "pnpm --filter astro-frontend build",
-    "build:backend": "cd apps/spring-boot-api && ./gradlew build"
+    "build:backend": "cd apps/spring-boot-api && ./gradlew build",
+    "preview:frontend": "pnpm --filter astro-frontend preview"
   },
   "devDependencies": {
     "@types/node": "^20.14.9"
