@@ -1,0 +1,105 @@
+### Variables
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+
+### Health Check
+GET {{baseUrl}}/toppings
+
+###
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com", 
+  "password": "password123"
+}
+
+###
+
+### Save token from login response
+@authToken = {{login.response.body.token}}
+
+###
+
+### Get all toppings (public endpoint)
+GET {{baseUrl}}/toppings
+
+###
+
+### Get current basket (requires auth)
+GET {{baseUrl}}/orders/basket
+Authorization: Bearer {{authToken}}
+
+###
+
+### Add sandwich to basket
+POST {{baseUrl}}/orders/basket/sandwich
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "type": "HAM",
+  "toppingIds": [1, 2, 3]
+}
+
+###
+
+### Add vegetarian sandwich with max toppings
+POST {{baseUrl}}/orders/basket/sandwich
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "type": "VEGETARIAN",
+  "toppingIds": [1, 1, 2, 3]
+}
+
+###
+
+### Pay for order (fake payment)
+POST {{baseUrl}}/orders/pay
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get all user orders
+GET {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+
+###
+
+### Test error: Add sandwich with too many toppings (should fail)
+POST {{baseUrl}}/orders/basket/sandwich
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "type": "HAM",
+  "toppingIds": [1, 2, 3, 4, 1]
+}
+
+###
+
+### Test error: Login with wrong password
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}

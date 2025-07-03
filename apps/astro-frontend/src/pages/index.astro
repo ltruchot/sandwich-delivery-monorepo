@@ -1,0 +1,125 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Welcome - Sandwich Delivery">
+  <div class="text-center">
+    <div class="mb-12">
+      <h1 class="text-5xl font-bold text-gray-800 mb-4">
+        🥪 Welcome to Sandwich Delivery
+      </h1>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Fresh, delicious sandwiches delivered right to your door. 
+        Choose from ham or vegetarian options with your favorite toppings!
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-4xl mb-4">🥓</div>
+        <h3 class="font-semibold text-gray-800 mb-2">Ham Sandwiches</h3>
+        <p class="text-gray-600 text-sm">Fresh ham with your choice of toppings</p>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-4xl mb-4">🥬</div>
+        <h3 class="font-semibold text-gray-800 mb-2">Vegetarian</h3>
+        <p class="text-gray-600 text-sm">Plant-based goodness for veggie lovers</p>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-4xl mb-4">🧀</div>
+        <h3 class="font-semibold text-gray-800 mb-2">Fresh Toppings</h3>
+        <p class="text-gray-600 text-sm">Cheese, salad, tomato, and onion</p>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-4xl mb-4">🚚</div>
+        <h3 class="font-semibold text-gray-800 mb-2">Fast Delivery</h3>
+        <p class="text-gray-600 text-sm">Quick and reliable delivery service</p>
+      </div>
+    </div>
+
+    <div id="ctaSection" class="bg-white rounded-lg shadow-md p-8 max-w-md mx-auto">
+      <!-- Content will be updated by JavaScript based on auth state -->
+    </div>
+
+    <div class="mt-12 text-sm text-gray-500">
+      <p>
+        Demo API running on 
+        <a href="http://localhost:8080/api/toppings" class="text-orange-600 hover:underline" target="_blank">
+          http://localhost:8080
+        </a>
+      </p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Update CTA section based on auth state
+  function updateCTASection() {
+    const token = localStorage.getItem('token');
+    const email = localStorage.getItem('email');
+    const ctaSection = document.getElementById('ctaSection');
+    
+    if (token && email && ctaSection) {
+      // User is logged in
+      ctaSection.innerHTML = `
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome back! 👋</h2>
+        <p class="text-gray-600 mb-6">
+          Ready to order some delicious sandwiches, ${email.split('@')[0]}?
+        </p>
+        <div class="space-y-3">
+          <a 
+            href="/order" 
+            class="block w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+          >
+            🥪 Start Ordering
+          </a>
+          <a 
+            href="/orders" 
+            class="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center"
+          >
+            📋 View My Orders
+          </a>
+        </div>
+      `;
+    } else if (ctaSection) {
+      // User is not logged in
+      ctaSection.innerHTML = `
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Ready to Order?</h2>
+        <p class="text-gray-600 mb-6">
+          Create an account or login to start building your perfect sandwich!
+        </p>
+        <div class="space-y-3">
+          <a 
+            href="/order" 
+            class="block w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+          >
+            🥪 Order Now
+          </a>
+          <div class="flex space-x-3">
+            <a 
+              href="/register" 
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center"
+            >
+              Sign Up
+            </a>
+            <a 
+              href="/login" 
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center"
+            >
+              Login
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  // Update CTA on page load
+  document.addEventListener('DOMContentLoaded', updateCTASection);
+  
+  // Listen for storage changes
+  window.addEventListener('storage', updateCTASection);
+</script>

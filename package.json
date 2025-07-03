@@ -1,0 +1,17 @@
+{
+  "name": "sandwich-delivery-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:frontend": "pnpm --filter astro-frontend dev",
+    "dev:backend": "cd apps/spring-boot-api && ./gradlew bootRun",
+    "build": "pnpm run build:frontend && pnpm run build:backend",
+    "build:frontend": "pnpm --filter astro-frontend build",
+    "build:backend": "cd apps/spring-boot-api && ./gradlew build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

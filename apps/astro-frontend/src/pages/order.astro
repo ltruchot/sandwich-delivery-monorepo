@@ -1,0 +1,299 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Order Sandwiches - Sandwich Delivery">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Order Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">🥪 Build Your Sandwich</h1>
+      
+      <form id="sandwichForm" class="space-y-6">
+        <!-- Sandwich Type -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-3">Choose your base (5€)</label>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="type" value="HAM" class="text-orange-600 focus:ring-orange-500" required />
+              <span class="ml-2">🥓 Ham Sandwich</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="type" value="VEGETARIAN" class="text-orange-600 focus:ring-orange-500" required />
+              <span class="ml-2">🥬 Vegetarian Sandwich</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Toppings -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-3">
+            Add Toppings (1€ each, max 4 types, max 2 of each)
+          </label>
+          <div id="toppingsContainer" class="space-y-3">
+            <!-- Toppings will be loaded dynamically -->
+          </div>
+        </div>
+        
+        <!-- Price Display -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <div class="flex justify-between text-lg font-semibold">
+            <span>Total Price:</span>
+            <span id="totalPrice" class="text-orange-600">5.00€</span>
+          </div>
+        </div>
+        
+        <button 
+          type="submit" 
+          class="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors font-medium text-lg"
+        >
+          Add to Basket 🛒
+        </button>
+      </form>
+      
+      <div id="error" class="mt-4 text-red-600 text-sm hidden"></div>
+      <div id="success" class="mt-4 text-green-600 text-sm hidden"></div>
+    </div>
+    
+    <!-- Current Basket -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-gray-800">🛒 Your Basket</h2>
+        <button 
+          id="refreshBasket" 
+          class="text-orange-600 hover:text-orange-700 text-sm"
+        >
+          Refresh
+        </button>
+      </div>
+      
+      <div id="basketContent">
+        <div class="text-gray-500 text-center py-8">
+          Loading basket...
+        </div>
+      </div>
+      
+      <div id="basketFooter" class="hidden border-t pt-4 mt-4">
+        <div class="flex justify-between text-lg font-semibold mb-4">
+          <span>Basket Total:</span>
+          <span id="basketTotal" class="text-orange-600">0.00€</span>
+        </div>
+        <button 
+          id="payButton" 
+          class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+        >
+          💳 Pay Now (Fake Payment)
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { api, type Topping, type Order } from '../utils/api.ts';
+
+  let toppings: Topping[] = [];
+  let currentBasket: Order | null = null;
+
+  // Check if user is logged in
+  if (!localStorage.getItem('token')) {
+    window.location.href = '/login';
+  }
+
+  const form = document.getElementById('sandwichForm') as HTMLFormElement;
+  const errorDiv = document.getElementById('error') as HTMLDivElement;
+  const successDiv = document.getElementById('success') as HTMLDivElement;
+  const totalPriceSpan = document.getElementById('totalPrice') as HTMLSpanElement;
+  const toppingsContainer = document.getElementById('toppingsContainer') as HTMLDivElement;
+  const basketContent = document.getElementById('basketContent') as HTMLDivElement;
+  const basketFooter = document.getElementById('basketFooter') as HTMLDivElement;
+  const basketTotal = document.getElementById('basketTotal') as HTMLSpanElement;
+  const payButton = document.getElementById('payButton') as HTMLButtonElement;
+  const refreshButton = document.getElementById('refreshBasket') as HTMLButtonElement;
+
+  // Load toppings and basket on page load
+  async function loadData() {
+    try {
+      toppings = await api.getToppings();
+      renderToppings();
+      await loadBasket();
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
+  }
+
+  function renderToppings() {
+    toppingsContainer.innerHTML = toppings.map(topping => `
+      <div class="flex items-center justify-between">
+        <label class="flex items-center">
+          <span class="text-lg">${getToppingEmoji(topping.name)}</span>
+          <span class="ml-2 capitalize">${topping.name}</span>
+          <span class="ml-2 text-gray-500">(${topping.price.toFixed(2)}€)</span>
+        </label>
+        <div class="flex items-center space-x-2">
+          <button type="button" class="topping-minus bg-gray-200 w-8 h-8 rounded-full hover:bg-gray-300" data-id="${topping.id}">-</button>
+          <span class="topping-count w-8 text-center" data-id="${topping.id}">0</span>
+          <button type="button" class="topping-plus bg-orange-200 w-8 h-8 rounded-full hover:bg-orange-300" data-id="${topping.id}">+</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Add event listeners for topping controls
+    document.querySelectorAll('.topping-plus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const toppingId = (e.target as HTMLElement).dataset.id!;
+        updateToppingCount(parseInt(toppingId), 1);
+      });
+    });
+
+    document.querySelectorAll('.topping-minus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const toppingId = (e.target as HTMLElement).dataset.id!;
+        updateToppingCount(parseInt(toppingId), -1);
+      });
+    });
+  }
+
+  function getToppingEmoji(name: string): string {
+    const emojis: Record<string, string> = {
+      salad: '🥬',
+      tomato: '🍅',
+      onion: '🧅',
+      cheese: '🧀'
+    };
+    return emojis[name.toLowerCase()] || '🥪';
+  }
+
+  function updateToppingCount(toppingId: number, delta: number) {
+    const countSpan = document.querySelector(`.topping-count[data-id="${toppingId}"]`) as HTMLSpanElement;
+    const currentCount = parseInt(countSpan.textContent!);
+    const newCount = Math.max(0, Math.min(2, currentCount + delta));
+    
+    // Check total toppings limit
+    const totalToppings = Array.from(document.querySelectorAll('.topping-count')).reduce((sum, span) => {
+      return sum + parseInt(span.textContent!);
+    }, 0) - currentCount + newCount;
+    
+    if (totalToppings > 4) {
+      showError('Maximum 4 toppings allowed!');
+      return;
+    }
+    
+    countSpan.textContent = newCount.toString();
+    updatePrice();
+  }
+
+  function updatePrice() {
+    const basePrice = 5;
+    const toppingPrice = Array.from(document.querySelectorAll('.topping-count')).reduce((sum, span) => {
+      return sum + parseInt(span.textContent!);
+    }, 0);
+    
+    totalPriceSpan.textContent = `${(basePrice + toppingPrice).toFixed(2)}€`;
+  }
+
+  async function loadBasket() {
+    try {
+      currentBasket = await api.getCurrentBasket();
+      renderBasket();
+    } catch (error) {
+      basketContent.innerHTML = '<div class="text-gray-500 text-center py-8">Empty basket</div>';
+    }
+  }
+
+  function renderBasket() {
+    if (!currentBasket || currentBasket.sandwiches.length === 0) {
+      basketContent.innerHTML = '<div class="text-gray-500 text-center py-8">Your basket is empty</div>';
+      basketFooter.classList.add('hidden');
+      return;
+    }
+
+    basketContent.innerHTML = currentBasket.sandwiches.map((sandwich, index) => `
+      <div class="border-b pb-4 mb-4 last:border-b-0">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="font-medium">${sandwich.type === 'HAM' ? '🥓 Ham' : '🥬 Vegetarian'} Sandwich</span>
+            ${sandwich.toppingIds.length > 0 ? `
+              <div class="text-sm text-gray-600 mt-1">
+                Toppings: ${getToppingsNames(sandwich.toppingIds).join(', ')}
+              </div>
+            ` : ''}
+          </div>
+          <span class="font-semibold text-orange-600">${sandwich.totalPrice.toFixed(2)}€</span>
+        </div>
+      </div>
+    `).join('');
+
+    basketTotal.textContent = `${currentBasket.totalPrice.toFixed(2)}€`;
+    basketFooter.classList.remove('hidden');
+  }
+
+  function getToppingsNames(toppingIds: number[]): string[] {
+    return toppingIds.map(id => {
+      const topping = toppings.find(t => t.id === id);
+      return topping ? topping.name.charAt(0).toUpperCase() + topping.name.slice(1) : 'Unknown';
+    });
+  }
+
+  function showError(message: string) {
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+    successDiv.classList.add('hidden');
+    setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+  }
+
+  function showSuccess(message: string) {
+    successDiv.textContent = message;
+    successDiv.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+    setTimeout(() => successDiv.classList.add('hidden'), 3000);
+  }
+
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const type = formData.get('type') as 'HAM' | 'VEGETARIAN';
+    
+    const toppingIds: number[] = [];
+    document.querySelectorAll('.topping-count').forEach(span => {
+      const count = parseInt(span.textContent!);
+      const id = parseInt((span as HTMLElement).dataset.id!);
+      for (let i = 0; i < count; i++) {
+        toppingIds.push(id);
+      }
+    });
+    
+    try {
+      await api.addSandwichToBasket({ type, toppingIds });
+      showSuccess('Sandwich added to basket!');
+      await loadBasket();
+      
+      // Reset form
+      form.reset();
+      document.querySelectorAll('.topping-count').forEach(span => {
+        span.textContent = '0';
+      });
+      updatePrice();
+    } catch (error) {
+      showError('Failed to add sandwich to basket');
+    }
+  });
+
+  // Pay button
+  payButton.addEventListener('click', async () => {
+    try {
+      await api.payOrder();
+      showSuccess('Payment successful! Order placed 🎉');
+      await loadBasket();
+    } catch (error) {
+      showError('Payment failed');
+    }
+  });
+
+  // Refresh basket
+  refreshButton.addEventListener('click', loadBasket);
+
+  // Initialize
+  loadData();
+</script>

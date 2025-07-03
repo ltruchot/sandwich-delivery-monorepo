@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: sandwich-delivery-api
+    runtime: docker
+    repo: https://github.com/YOUR_USERNAME/sandwich-delivery-monorepo
+    rootDir: apps/spring-boot-api
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sandwich-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://your-frontend-url.onrender.com
+
+databases:
+  - name: sandwich-postgres
+    plan: free
+    databaseName: sandwich_delivery
+    user: sandwich_user
